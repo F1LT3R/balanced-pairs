@@ -8,6 +8,7 @@ const result = balance(content, {
 	close: '</div>'
 })
 
+// eslint-disable-next-line no-console
 console.log(util.inspect(result, {
 	showHidden: false,
 	depth: null

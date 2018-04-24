@@ -1,6 +1,5 @@
 const superSplit = require('super-split')
 const pointInPolygon = require('point-in-polygon')
-const chromafi = require('chromafi')
 
 const block = (start, depth) => {
 	const t = {

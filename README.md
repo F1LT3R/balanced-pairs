@@ -258,4 +258,3 @@ Result:
   mode: 'even',
   inside: [Function: inside] }
 ```
-

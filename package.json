@@ -2,7 +2,7 @@
 	"name": "balanced-pairs",
 	"main": "balanced-pairs",
 	"version": "1.0.0",
-	"description": "🏄  get blocks of balanced pairs, eg: the contents of \"{, }\" or \"```, ```\"",
+	"description": "🏄  get blocks of balanced pairs, eg: {} \\<a>\\</a> or code fences ```",
 	"license": "MIT",
 	"repository": "F1LT3R/balanced-pairs",
 	"author": {

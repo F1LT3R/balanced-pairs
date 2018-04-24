@@ -2,134 +2,176 @@ const superSplit = require('super-split')
 const pointInPolygon = require('point-in-polygon')
 const chromafi = require('chromafi')
 
-const resolveRun = (run, body, content) => {
-	const start = run[0]
-	const end = run[1]
-
-	const polygon = [
-		[start - 0, -1],
-		[end + 0, -1],
-		[end + 0, 1],
-		[start - 0, 1],
-		// Close poly
-		[start - 0, -1]
-	]
-
-	const block = {
+const block = (start, depth) => {
+	const t = {
 		start,
-		end,
-		pre: content.substr(0, start),
-		body: body,
-		post: content.substr(end),
-		polygon,
-		delimiter: {
-			start: start - openLen,
-			end: end + closeLen - 1,
-			pre: content.substr(0, start - openLen),
-			body: opts.open + body + opts.close,
-			post: content.substr(end + closeLen)
-		}
+		end: null,
+		depth,
+		pre: '',
+		body: '',
+		post: '',
+		root: false,
+		delimiter: {},
+		children: []
 	}
 
-	return block
-}
-
-class Block {
-	constructor (start, parent = null) {
-		this.start = start
-		this.children = []
-		this.parent = parent
-		this.body = ''
-		this.end = null
-	}
-
-	close (index, content) {
-		this.end = index
-		this.body = content.substr(this.start, this.end)
-	}
+	return t
 }
 
 module.exports = (content, opts) => {
-	console.log(content)
 	const delims = [opts.open, opts.close]
 	const particle = superSplit(content, delims)
 	const openLen = opts.open.length
 	const closeLen = opts.close.length
 	const evenDelims = opts.open === opts.close
 
-	const firstOpen = particle.indexOf(opts.open)
-	const firstClose = particle.indexOf(opts.close)
-
 	const result = {
 		blocks: [],
 		polygon: [],
+		mode: evenDelims ? 'even' : 'odd',
 		inside: n => {
-			return pointInPolygon([n, 0], result.polygon)
+			if (result.mode === 'even') {
+				return pointInPolygon([n, 0], result.polygon)
+			}
+
+			const insideOf = []
+			result.list.forEach(block => {
+				if (n >= block.start && n <= block.end) {
+					insideOf.push(block)
+				}
+			})
+
+			return insideOf
 		}
 	}
 
+	// Even Delims, ie: "```code``` fence ```code```"
 	let run = []
 	let n = 0
-	let on = evenDelims ? false : firstOpen > firstClose
+	let on = false // Only used with evenDelims
 
+	// Off Delims, ie: `foo {bar {baz} quz} spkr}`
 	let openDepth = 0
 	const stack = []
-	let currentItem = {children: []}
+	const currentItem = {
+		start: 0,
+		end: content.length - 1,
+		depth: 0,
+		body: content,
+		root: true,
+		children: []
+	}
 	stack.push(currentItem)
 
-	particle.forEach((atom, i) => {
-		if (!delims.includes(atom)) {
-			n += atom.length
-			return
-		}
+	// Map of blocks by level
+	const levels = {}
+	// List of blocks by close-order
+	const list = []
 
+	particle.forEach((atom, i) => {
 		if (evenDelims === false) {
-			let currentItem = stack[stack.length - 1] || undefined
+			const currentItem = stack[stack.length - 1] || undefined
 
 			if (atom === opts.open) {
 				openDepth += 1
-				const blockStart = n + openLen
-				// const nextItem = new Block(blockStart, currentItem)
-				const nextItem = new Block(blockStart, null)
+				if (!levels[openDepth]) {
+					levels[openDepth] = []
+				}
+
+				const start = n + openLen
+				const nextItem = block(start, openDepth)
 				if (currentItem) {
 					currentItem.children.push(nextItem)
 				}
 				stack.push(nextItem)
-				// currentItem = nextItem
 			}
 
 			if (atom === opts.close) {
 				openDepth -= 1
+
+				const out = n
 				if (currentItem) {
-					const n2 = n - (closeLen)
-					currentItem.close(n2, content)
-					stack.pop()
+					const start = currentItem.start
+					const body = content.slice(start, out)
+					const end = out - 1
+					currentItem.end = end
+					currentItem.pre = content.slice(0, start)
+					currentItem.body = body
+					currentItem.post = content.slice(end + 1)
+
+					const delim = currentItem.delimiter
+					delim.start = start - openLen
+					delim.end = end + closeLen
+					delim.pre = content.slice(0, delim.start)
+					delim.body = opts.open + body + opts.close
+					delim.post = content.slice(delim.end + 1)
+
+					const item = stack.pop()
+					levels[openDepth + 1].push(item)
+					list.push(item)
 				}
 			}
+
+			n += atom.length
 		}
 
 		if (evenDelims) {
+			n += atom.length
+
+			if (!delims.includes(atom)) {
+				return
+			}
+
 			on = !on
-			const n2 = on ? n + openLen : n
+			const n2 = on ? n : n - closeLen
 			run.push(n2)
-			const body = particle[i - 1]
+
 			if (run.length === 2) {
-				const block = resolveRun(run, body, content)
+				const start = run[0]
+				const end = run[1] - 1
+
+				// The polygon end is offset due to the
+				// way the PIP algorithm defines corners
+				const polygon = [
+					[start, -1],
+					[end + 1, -1],
+					[end + 1, 1],
+					[start, 1],
+					// Close poly
+					[start, -1]
+				]
+
+				const body = particle[i - 1]
+
+				const block = {
+					start,
+					end,
+					pre: content.slice(0, start),
+					body,
+					post: content.slice(end + 1),
+					polygon,
+					delimiter: {
+						start: start - openLen,
+						end: end + closeLen,
+						pre: content.slice(0, start - openLen),
+						body: opts.open + body + opts.close,
+						post: content.slice(end + 1)
+					}
+				}
+
 				result.blocks.push(block)
-				result.polygon.concat(block.polygon)
+				result.polygon = result.polygon.concat(polygon)
+
 				run = []
 			}
-			return
 		}
-
-		n += atom.length
 	})
 
-	console.log(stack[0])
-	console.log()
-	console.log(stack[0].children[0].body)
-	console.log()
-	console.log(stack[0].children[0].children[0].body)
+	if (!evenDelims) {
+		result.blocks = stack
+		result.levels = levels
+		result.list = list
+	}
 
 	return result
 }

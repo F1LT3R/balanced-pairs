@@ -25,7 +25,19 @@
 	"files": [
 		"index.js"
 	],
-	"keywords": [],
+	"keywords": [
+		"balance",
+		"match",
+		"pairs",
+		"even",
+		"uneven",
+		"parse",
+		"delimiters",
+		"code fence",
+		"tags",
+		"braces",
+		"blocks"
+	],
 	"dependencies": {
 		"point-in-polygon": "^1.0.1",
 		"super-split": "^1.1.0"

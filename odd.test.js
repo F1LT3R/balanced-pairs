@@ -395,11 +395,6 @@ test('get deep balanced nested curly braces', t => {
 
 	t.deepEqual(expectedLevels, result.levels)
 
-	// console.log(util.inspect(result.levels, {
-	// 	showHidden: false,
-	// 	depth: null
-	// }))
-
 	// DEBUG
 	// console.log(util.inspect(result.list, {
 	// 	showHidden: false,

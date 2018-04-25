@@ -110,8 +110,6 @@ module.exports = (content, opts) => {
 	// Add the root block to the levels array
 	levels[0].push(currentItem)
 
-	// const interlaced = []
-
 	// List of blocks by close-order
 	const list = []
 

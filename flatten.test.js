@@ -100,7 +100,6 @@ test('flatten tree deep readme demo', t => {
 		close: '}'
 	})
 
-	// result.blocks[0] = the root block
 	const block4 = result.blocks[0]
 		.children[0]
 		.children[0]

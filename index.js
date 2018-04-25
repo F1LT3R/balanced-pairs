@@ -11,10 +11,48 @@ const block = (start, depth) => {
 		post: '',
 		root: false,
 		delimiter: {},
+		updateBody: newBody => {
+			t.newBody = newBody
+		},
 		children: []
 	}
 
 	return t
+}
+
+const deepFold = (block, opts) => {
+	const blockStrs = block.children.map(block => {
+		return block.delimiter.body
+	})
+
+	const subs = superSplit(block.body, blockStrs)
+
+	if (typeof subs === 'string') {
+		if (block.newBody) {
+			return block.newBody
+		}
+		return block.delimiter.body
+	}
+
+	let out = []
+	subs.forEach(sub => {
+		const child = block.children.find(child => child.delimiter.body === sub)
+
+		if (child) {
+			const subFold = deepFold(child, opts)
+			out.push(subFold)
+		} else {
+			out.push(sub)
+		}
+	})
+
+	if (block.newBody || block.depth === 0) {
+		out = out.join('')
+	} else {
+		out = `{${out.join('')}}`
+	}
+
+	return out
 }
 
 module.exports = (content, opts) => {
@@ -41,6 +79,11 @@ module.exports = (content, opts) => {
 			})
 
 			return insideOf
+		},
+
+		flatten: () => {
+			const tree = result.blocks.slice()[0]
+			return deepFold(tree, opts)
 		}
 	}
 
@@ -63,7 +106,12 @@ module.exports = (content, opts) => {
 	stack.push(currentItem)
 
 	// Map of blocks by level
-	const levels = {}
+	const levels = [[]]
+	// Add the root block to the levels array
+	levels[0].push(currentItem)
+
+	// const interlaced = []
+
 	// List of blocks by close-order
 	const list = []
 

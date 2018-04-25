@@ -31,6 +31,8 @@ An "Uneven Pair" is a pair of varying block delimiters. For example: HTML tags.
 	+ A linear array of blocks in the order they were closed.
 	+ A object containing blocks mapped to their depth.
 - An `inside(charPos)` function that returns all the nested blocks that the character is within.
+- Each block contains an `updateBody()` function that sets the `.newBody` property on each block
+- Result has a `.flatten()` method, to turn the block tree back into a string, replacing the old content with the updated content
 
 ```js
 const balance = require('balanced-pairs')
@@ -194,6 +196,51 @@ Result:
     }]
   }]
 }
+```
+
+
+### Flatten
+
+Each block contains an `updateBody()` function that sets the `.newBody` property on each block.
+
+Result has a `.flatten()` method, to turn the block tree back into a string, replacing the old content with the updated content
+
+Note: flattening a block will remove it's delimiters within the parent.
+
+
+```js
+const source = '0{1}{2}3'
+  const result = balance(source, {
+    open: '{',
+    close: '}'
+  })
+
+  result.blocks[0].children[0].updateBody('x')
+  result.blocks[0].children[1].updateBody('y')
+  const flattened = result.flatten()
+  console.log(flattened) // '0xy3'
+```
+
+You can also flatten nested content:
+
+```js
+const source = '0{1{2{3{4}}}}'
+const result = balance(source, {
+  open: '{',
+  close: '}'
+})
+
+// result.blocks[0] = the root block
+const block4 = result.blocks[0]
+  .children[0]
+  .children[0]
+  .children[0]
+  .children[0]
+
+block4.updateBody('[BEEP!]')
+
+const flattened = result.flatten()
+console.log(flattened) // 0{1{2{3[BEEP!]}}}
 ```
 
 

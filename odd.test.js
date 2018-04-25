@@ -5,6 +5,11 @@ import balance from '.'
 // import chromafi from 'chromafi'
 // import util from 'util'
 
+const deleteFns = block => {
+	delete block.updateBody
+	block.children.forEach(child => deleteFns(child))
+}
+
 test('get balanced nested curly braces', t => {
 	const source = 'A{B}A'
 
@@ -45,6 +50,14 @@ test('get balanced nested curly braces', t => {
 		}]
 	}]
 
+	deleteFns(result.blocks[0])
+
+	// // DEBUG
+	// console.log(util.inspect(result.blocks, {
+	// 	showHidden: false,
+	// 	depth: null
+	// }))
+
 	t.deepEqual(expectedBlocks, result.blocks)
 })
 
@@ -60,6 +73,8 @@ test('get deep balanced nested curly braces', t => {
 		open: '{',
 		close: '}'
 	})
+
+	deleteFns(result.blocks[0])
 
 	// DEBUG
 	// console.log(chromafi(result, {lineNumbers: false, codePad: 0}))
@@ -139,63 +154,86 @@ test('get deep balanced nested curly braces', t => {
 
 	t.deepEqual(expectedBlocks, result.blocks)
 
-	const expectedLevels = {
-		1: [{
+	const expectedLevels = [
+		[{
+			start: 0,
+			end: 16,
+			depth: 0,
+			body: 'A{B{C{D{E}D}C}B}A',
+			root: true,
+			children: [{
+				start: 2,
+				end: 14,
+				depth: 1,
+				pre: 'A{',
+				body: 'B{C{D{E}D}C}B',
+				post: '}A',
+				root: false,
+				delimiter: {
+					start: 1,
+					end: 15,
+					pre: 'A',
+					body: '{B{C{D{E}D}C}B}',
+					post: 'A'
+				},
+				children: [{
+					start: 4,
+					end: 12,
+					depth: 2,
+					pre: 'A{B{',
+					body: 'C{D{E}D}C',
+					post: '}B}A',
+					root: false,
+					delimiter: {
+						start: 3,
+						end: 13,
+						pre: 'A{B',
+						body: '{C{D{E}D}C}',
+						post: 'B}A'
+					},
+					children: [{
+						start: 6,
+						end: 10,
+						depth: 3,
+						pre: 'A{B{C{',
+						body: 'D{E}D',
+						post: '}C}B}A',
+						root: false,
+						delimiter: {
+							start: 5,
+							end: 11,
+							pre: 'A{B{C',
+							body: '{D{E}D}',
+							post: 'C}B}A'
+						},
+						children: [{
+							start: 8,
+							end: 8,
+							depth: 4,
+							pre: 'A{B{C{D{',
+							body: 'E',
+							post: '}D}C}B}A',
+							root: false,
+							delimiter: {
+								start: 7,
+								end: 9,
+								pre: 'A{B{C{D',
+								body: '{E}',
+								post: 'D}C}B}A'
+							},
+							children: []
+						}]
+					}]
+				}]
+			}]
+		}],
+		[{
 			start: 2,
 			end: 14,
 			depth: 1,
 			pre: 'A{',
 			body: 'B{C{D{E}D}C}B',
 			post: '}A',
-			children: [{
-				start: 4,
-				end: 12,
-				depth: 2,
-				pre: 'A{B{',
-				body: 'C{D{E}D}C',
-				post: '}B}A',
-				children: [{
-					start: 6,
-					end: 10,
-					depth: 3,
-					pre: 'A{B{C{',
-					body: 'D{E}D',
-					post: '}C}B}A',
-					children: [{
-						start: 8,
-						end: 8,
-						depth: 4,
-						pre: 'A{B{C{D{',
-						body: 'E',
-						post: '}D}C}B}A',
-						children: [],
-						root: false,
-						delimiter: {
-							start: 7,
-							end: 9,
-							pre: 'A{B{C{D',
-							body: '{E}',
-							post: 'D}C}B}A'
-						}
-					}],
-					root: false,
-					delimiter: {
-						start: 5,
-						end: 11,
-						pre: 'A{B{C',
-						body: '{D{E}D}',
-						post: 'C}B}A'
-					}
-				}],
-				root: false,
-				delimiter: {
-					start: 3,
-					end: 13,
-					pre: 'A{B',
-					body: '{C{D{E}D}C}',
-					post: 'B}A'
-				}
-			}],
 			root: false,
 			delimiter: {
 				start: 1,
@@ -203,48 +241,64 @@ test('get deep balanced nested curly braces', t => {
 				pre: 'A',
 				body: '{B{C{D{E}D}C}B}',
 				post: 'A'
-			}
+			},
+			children: [{
+				start: 4,
+				end: 12,
+				depth: 2,
+				pre: 'A{B{',
+				body: 'C{D{E}D}C',
+				post: '}B}A',
+				root: false,
+				delimiter: {
+					start: 3,
+					end: 13,
+					pre: 'A{B',
+					body: '{C{D{E}D}C}',
+					post: 'B}A'
+				},
+				children: [{
+					start: 6,
+					end: 10,
+					depth: 3,
+					pre: 'A{B{C{',
+					body: 'D{E}D',
+					post: '}C}B}A',
+					root: false,
+					delimiter: {
+						start: 5,
+						end: 11,
+						pre: 'A{B{C',
+						body: '{D{E}D}',
+						post: 'C}B}A'
+					},
+					children: [{
+						start: 8,
+						end: 8,
+						depth: 4,
+						pre: 'A{B{C{D{',
+						body: 'E',
+						post: '}D}C}B}A',
+						root: false,
+						delimiter: {
+							start: 7,
+							end: 9,
+							pre: 'A{B{C{D',
+							body: '{E}',
+							post: 'D}C}B}A'
+						},
+						children: []
+					}]
+				}]
+			}]
 		}],
-		2: [{
+		[{
 			start: 4,
 			end: 12,
 			depth: 2,
 			pre: 'A{B{',
 			body: 'C{D{E}D}C',
 			post: '}B}A',
-			children: [{
-				start: 6,
-				end: 10,
-				depth: 3,
-				pre: 'A{B{C{',
-				body: 'D{E}D',
-				post: '}C}B}A',
-				children: [{
-					start: 8,
-					end: 8,
-					depth: 4,
-					pre: 'A{B{C{D{',
-					body: 'E',
-					post: '}D}C}B}A',
-					children: [],
-					root: false,
-					delimiter: {
-						start: 7,
-						end: 9,
-						pre: 'A{B{C{D',
-						body: '{E}',
-						post: 'D}C}B}A'
-					}
-				}],
-				root: false,
-				delimiter: {
-					start: 5,
-					end: 11,
-					pre: 'A{B{C',
-					body: '{D{E}D}',
-					post: 'C}B}A'
-				}
-			}],
 			root: false,
 			delimiter: {
 				start: 3,
@@ -252,32 +306,48 @@ test('get deep balanced nested curly braces', t => {
 				pre: 'A{B',
 				body: '{C{D{E}D}C}',
 				post: 'B}A'
-			}
+			},
+			children: [{
+				start: 6,
+				end: 10,
+				depth: 3,
+				pre: 'A{B{C{',
+				body: 'D{E}D',
+				post: '}C}B}A',
+				root: false,
+				delimiter: {
+					start: 5,
+					end: 11,
+					pre: 'A{B{C',
+					body: '{D{E}D}',
+					post: 'C}B}A'
+				},
+				children: [{
+					start: 8,
+					end: 8,
+					depth: 4,
+					pre: 'A{B{C{D{',
+					body: 'E',
+					post: '}D}C}B}A',
+					root: false,
+					delimiter: {
+						start: 7,
+						end: 9,
+						pre: 'A{B{C{D',
+						body: '{E}',
+						post: 'D}C}B}A'
+					},
+					children: []
+				}]
+			}]
 		}],
-		3: [{
+		[{
 			start: 6,
 			end: 10,
 			depth: 3,
 			pre: 'A{B{C{',
 			body: 'D{E}D',
 			post: '}C}B}A',
-			children: [{
-				start: 8,
-				end: 8,
-				depth: 4,
-				pre: 'A{B{C{D{',
-				body: 'E',
-				post: '}D}C}B}A',
-				children: [],
-				root: false,
-				delimiter: {
-					start: 7,
-					end: 9,
-					pre: 'A{B{C{D',
-					body: '{E}',
-					post: 'D}C}B}A'
-				}
-			}],
 			root: false,
 			delimiter: {
 				start: 5,
@@ -285,16 +355,32 @@ test('get deep balanced nested curly braces', t => {
 				pre: 'A{B{C',
 				body: '{D{E}D}',
 				post: 'C}B}A'
-			}
+			},
+			children: [{
+				start: 8,
+				end: 8,
+				depth: 4,
+				pre: 'A{B{C{D{',
+				body: 'E',
+				post: '}D}C}B}A',
+				root: false,
+				delimiter: {
+					start: 7,
+					end: 9,
+					pre: 'A{B{C{D',
+					body: '{E}',
+					post: 'D}C}B}A'
+				},
+				children: []
+			}]
 		}],
-		4: [{
+		[{
 			start: 8,
 			end: 8,
 			depth: 4,
 			pre: 'A{B{C{D{',
 			body: 'E',
 			post: '}D}C}B}A',
-			children: [],
 			root: false,
 			delimiter: {
 				start: 7,
@@ -302,11 +388,23 @@ test('get deep balanced nested curly braces', t => {
 				pre: 'A{B{C{D',
 				body: '{E}',
 				post: 'D}C}B}A'
-			}
+			},
+			children: []
 		}]
-	}
+	]
 
 	t.deepEqual(expectedLevels, result.levels)
+
+	// console.log(util.inspect(result.levels, {
+	// 	showHidden: false,
+	// 	depth: null
+	// }))
+
+	// DEBUG
+	// console.log(util.inspect(result.list, {
+	// 	showHidden: false,
+	// 	depth: null
+	// }))
 
 	const expectedList = [{
 		start: 8,
@@ -471,13 +569,6 @@ test('get deep balanced nested curly braces', t => {
 	}]
 
 	t.deepEqual(expectedList, result.list)
-
-	// DEBUG
-	// console.log(util.inspect(result.list, {
-	// 	showHidden: false,
-	// 	depth: null
-	// }))
-
 	// '01234567890123456'
 	// 'A{B{C{D{E}D}C}B}A'
 
@@ -498,6 +589,8 @@ test('get balanced tag', t => {
 		open: '<a>',
 		close: '</a>'
 	})
+
+	deleteFns(result.blocks[0])
 
 	const expectedBlocks = [{
 		start: 0,
@@ -533,7 +626,7 @@ test('get balanced tag', t => {
 	// }))
 })
 
-test('get deep balanced double-parnes', t => {
+test('get deep balanced double-parens', t => {
 	//              0123456789012345678901234567890
 	const source = '((ALL((THE((GOOD))NIGHT))LONG))'
 
@@ -541,6 +634,8 @@ test('get deep balanced double-parnes', t => {
 		open: '((',
 		close: '))'
 	})
+
+	deleteFns(result.blocks[0])
 
 	const expectedBlocks = [{
 		start: 0,

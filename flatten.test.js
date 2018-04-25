@@ -3,7 +3,7 @@ import balance from '.'
 
 // DEBUG
 // import chromafi from 'chromafi'
-// import util from 'util'
+import util from 'util'
 
 test('flatten siblings w/ body replacements', t => {
 	const source = '0{1}{2}3'
@@ -111,3 +111,29 @@ test('flatten tree deep readme demo', t => {
 	const flattened = result.flatten()
 	t.is(flattened, '0{1{2{3[BEEP!]}}}')
 })
+
+test('flatten inner content', t => {
+	const source = '<p>{foo: {bar: "baz"}}</p>'
+	const result = balance(source, {
+		open: '{',
+		close: '}'
+	})
+
+	result.blocks[0]
+		.children[0]
+		.children[0].updateBody('YYY')
+
+	// DEBUG
+	// console.log(util.inspect(result.blocks, {
+	// 	showHidden: false,
+	// 	depth: null
+	// }))
+
+	const flattened1 = result.flatten()
+	t.is(flattened1, '<p>{foo: YYY}</p>')
+
+	result.blocks[0].children[0].updateBody('XXX')
+	const flattened2 = result.flatten()
+	t.is(flattened2, '<p>XXX</p>')
+})
+

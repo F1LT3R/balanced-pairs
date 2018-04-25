@@ -10,17 +10,17 @@ const block = (start, depth) => {
 		body: '',
 		post: '',
 		root: false,
-		delimiter: {},
 		updateBody: newBody => {
 			t.newBody = newBody
 		},
+		delimiter: {},
 		children: []
 	}
 
 	return t
 }
 
-const deepFold = (block, opts) => {
+const deepFold = (block, opts, depth = 1) => {
 	const blockStrs = block.children.map(block => {
 		return block.delimiter.body
 	})
@@ -31,27 +31,38 @@ const deepFold = (block, opts) => {
 		if (block.newBody) {
 			return block.newBody
 		}
+
 		return block.delimiter.body
 	}
 
 	let out = []
 	subs.forEach(sub => {
-		const child = block.children.find(child => child.delimiter.body === sub)
+		const child = block.children.find(child => {
+			if (child.delimiter.body === sub) {
+				return true
+			}
+			return false
+		})
 
-		if (child) {
-			const subFold = deepFold(child, opts)
-			out.push(subFold)
-		} else {
+		if (child === undefined) {
 			out.push(sub)
+		} else {
+			const subFold = deepFold(child, opts, depth += 1)
+			out.push(subFold)
 		}
 	})
 
-	if (block.newBody || block.depth === 0) {
+	if (block.depth === 0) {
 		out = out.join('')
 	} else {
 		out = `{${out.join('')}}`
 	}
 
+	if (block.newBody) {
+		return block.newBody
+	}
+
+	// console.log('Out:', out, depth)
 	return out
 }
 
@@ -131,7 +142,7 @@ module.exports = (content, opts) => {
 				stack.push(nextItem)
 			}
 
-			if (atom === opts.close) {
+			if (atom === opts.close && currentItem.depth > 0) {
 				openDepth -= 1
 
 				const out = n

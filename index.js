@@ -62,7 +62,6 @@ const deepFold = (block, opts, depth = 1) => {
 		return block.newBody
 	}
 
-	// console.log('Out:', out, depth)
 	return out
 }
 

@@ -3,7 +3,7 @@ import balance from '.'
 
 // DEBUG
 // import chromafi from 'chromafi'
-import util from 'util'
+// import util from 'util'
 
 test('flatten siblings w/ body replacements', t => {
 	const source = '0{1}{2}3'
